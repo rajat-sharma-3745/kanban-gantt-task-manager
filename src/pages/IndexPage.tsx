@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { KanbanBoard } from '../components/kanban/KanbanBoard'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { VirtualTaskTable } from '../components/list/VirtualTaskTable'
 import { ASSIGNEES } from '../data/assignees'
@@ -65,6 +66,7 @@ function MultiSelectChips<T extends string>({
 }
 
 export function IndexPage() {
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list')
   const navigate = useNavigate()
   const { search } = useLocation()
 
@@ -125,6 +127,31 @@ export function IndexPage() {
 
   return (
     <main className="mx-auto max-w-6xl p-6">
+      <section className="mb-4 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setViewMode('list')}
+          className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
+            viewMode === 'list'
+              ? 'border-neutral-900 bg-neutral-900 text-white'
+              : 'border-neutral-300 bg-white text-neutral-700'
+          }`}
+        >
+          List View
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewMode('kanban')}
+          className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
+            viewMode === 'kanban'
+              ? 'border-neutral-900 bg-neutral-900 text-white'
+              : 'border-neutral-300 bg-white text-neutral-700'
+          }`}
+        >
+          Kanban View
+        </button>
+      </section>
+
       <section className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
         <div className="grid gap-4 md:grid-cols-2">
           <MultiSelectChips
@@ -205,10 +232,10 @@ export function IndexPage() {
 
       <section className="mt-6">
         <p className="text-sm text-neutral-600">
-          Filtered tasks: {sortedTasks.length} / {tasks.length}
+          Filtered tasks: {filteredTasks.length} / {tasks.length}
         </p>
 
-        {sortedTasks.length === 0 ? (
+        {filteredTasks.length === 0 ? (
           <div className="mt-4 rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-8 text-center">
             <h2 className="text-lg font-semibold text-neutral-800">
               No tasks match these filters
@@ -223,6 +250,10 @@ export function IndexPage() {
             >
               Clear filters
             </button>
+          </div>
+        ) : viewMode === 'kanban' ? (
+          <div className="mt-4">
+            <KanbanBoard tasks={filteredTasks} onStatusChange={setTaskStatus} />
           </div>
         ) : (
           <div className="mt-4">
