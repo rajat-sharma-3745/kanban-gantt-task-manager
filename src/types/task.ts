@@ -38,3 +38,39 @@ export type Assignee = {
   id: string
   displayName: string
 }
+
+export type TaskFilters = {
+  statuses: TaskStatus[]
+  priorities: TaskPriority[]
+  assigneeIds: string[]
+  dueFrom?: string
+  dueTo?: string
+}
+
+export const DEFAULT_TASK_FILTERS: TaskFilters = {
+  statuses: [],
+  priorities: [],
+  assigneeIds: [],
+  dueFrom: undefined,
+  dueTo: undefined,
+}
+
+export function createDefaultTaskFilters(): TaskFilters {
+  return {
+    statuses: [],
+    priorities: [],
+    assigneeIds: [],
+    dueFrom: undefined,
+    dueTo: undefined,
+  }
+}
+
+export function isAnyFilterActive(filters: TaskFilters): boolean {
+  return (
+    filters.statuses.length > 0 ||
+    filters.priorities.length > 0 ||
+    filters.assigneeIds.length > 0 ||
+    Boolean(filters.dueFrom) ||
+    Boolean(filters.dueTo)
+  )
+}

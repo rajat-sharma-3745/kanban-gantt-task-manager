@@ -7,13 +7,12 @@ import {
   type TaskStatus,
 } from '../types/task'
 
-/** Deterministic PRNG (createSeededRandom). */
-function createSeededRandom(seed: number): () => number {
-  return () => {
-    let t = (seed += 0x6d2b79f5)
-    t = Math.imul(t ^ (t >>> 15), t | 1)
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+function createSeededRandom(seed: number) {
+  let value = seed
+
+  return function () {
+    value = (value * 9301 + 49297) % 233280
+    return value / 233280
   }
 }
 
