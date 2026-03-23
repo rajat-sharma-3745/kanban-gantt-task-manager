@@ -1,8 +1,14 @@
 import {
+  LIST_SORT_KEYS,
+  SORT_DIRECTIONS,
   TASK_PRIORITIES,
   TASK_STATUSES,
   createDefaultTaskFilters,
+  createDefaultTaskListSort,
+  type ListSortKey,
+  type SortDirection,
   type TaskFilters,
+  type TaskListSort,
   type TaskPriority,
   type TaskStatus,
 } from '../types/task'
@@ -13,6 +19,14 @@ function isTaskStatus(value: string): value is TaskStatus {
 
 function isTaskPriority(value: string): value is TaskPriority {
   return (TASK_PRIORITIES as readonly string[]).includes(value)
+}
+
+function isListSortKey(value: string): value is ListSortKey {
+  return (LIST_SORT_KEYS as readonly string[]).includes(value)
+}
+
+function isSortDirection(value: string): value is SortDirection {
+  return (SORT_DIRECTIONS as readonly string[]).includes(value)
 }
 
 function isIsoDate(value: string): boolean {
@@ -44,7 +58,23 @@ export function parseFiltersFromSearch(search: string): TaskFilters {
   }
 }
 
-export function buildSearchFromFilters(filters: TaskFilters): string {
+export function parseSortFromSearch(search: string): TaskListSort {
+  const params = new URLSearchParams(search)
+  const defaults = createDefaultTaskListSort()
+  const sortByRaw = params.get('sortBy')
+  const sortDirRaw = params.get('sortDir')
+
+  return {
+    sortBy: sortByRaw && isListSortKey(sortByRaw) ? sortByRaw : defaults.sortBy,
+    sortDir:
+      sortDirRaw && isSortDirection(sortDirRaw) ? sortDirRaw : defaults.sortDir,
+  }
+}
+
+export function buildSearchFromState(
+  filters: TaskFilters,
+  sort: TaskListSort,
+): string {
   const params = new URLSearchParams()
 
   filters.statuses.forEach((status) => params.append('status', status))
@@ -60,6 +90,9 @@ export function buildSearchFromFilters(filters: TaskFilters): string {
   if (filters.dueTo) {
     params.set('dueTo', filters.dueTo)
   }
+
+  params.set('sortBy', sort.sortBy)
+  params.set('sortDir', sort.sortDir)
 
   const query = params.toString()
   return query ? `?${query}` : ''

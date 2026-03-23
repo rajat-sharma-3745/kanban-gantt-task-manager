@@ -47,6 +47,17 @@ export type TaskFilters = {
   dueTo?: string
 }
 
+export const LIST_SORT_KEYS = ['title', 'priority', 'dueDate'] as const
+export type ListSortKey = (typeof LIST_SORT_KEYS)[number]
+
+export const SORT_DIRECTIONS = ['asc', 'desc'] as const
+export type SortDirection = (typeof SORT_DIRECTIONS)[number]
+
+export type TaskListSort = {
+  sortBy: ListSortKey
+  sortDir: SortDirection
+}
+
 export const DEFAULT_TASK_FILTERS: TaskFilters = {
   statuses: [],
   priorities: [],
@@ -62,6 +73,18 @@ export function createDefaultTaskFilters(): TaskFilters {
     assigneeIds: [],
     dueFrom: undefined,
     dueTo: undefined,
+  }
+}
+
+export const DEFAULT_TASK_LIST_SORT: TaskListSort = {
+  sortBy: 'dueDate',
+  sortDir: 'asc',
+}
+
+export function createDefaultTaskListSort(): TaskListSort {
+  return {
+    sortBy: 'dueDate',
+    sortDir: 'asc',
   }
 }
 

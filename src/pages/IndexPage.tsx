@@ -1,16 +1,22 @@
 import { useEffect, useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { VirtualTaskTable } from '../components/list/VirtualTaskTable'
 import { ASSIGNEES } from '../data/assignees'
-import { getFilteredTasks, useTaskStore } from '../store/taskStore'
+import { getFilteredTasks, getSortedTasks, useTaskStore } from '../store/taskStore'
 import {
   TASK_PRIORITIES,
   TASK_STATUSES,
   isAnyFilterActive,
+  type ListSortKey,
   type TaskFilters,
   type TaskPriority,
   type TaskStatus,
 } from '../types/task'
-import { buildSearchFromFilters, parseFiltersFromSearch } from '../utils/filterQuery'
+import {
+  buildSearchFromState,
+  parseFiltersFromSearch,
+  parseSortFromSearch,
+} from '../utils/filterQuery'
 
 function toggleInArray<T extends string>(arr: T[], value: T): T[] {
   if (arr.includes(value)) {
@@ -67,22 +73,32 @@ export function IndexPage() {
   const setFilters = useTaskStore((s) => s.setFilters)
   const setFiltersFromQuery = useTaskStore((s) => s.setFiltersFromQuery)
   const clearFilters = useTaskStore((s) => s.clearFilters)
+  const listSort = useTaskStore((s) => s.listSort)
+  const setListSort = useTaskStore((s) => s.setListSort)
+  const setSortBy = useTaskStore((s) => s.setSortBy)
+  const setTaskStatus = useTaskStore((s) => s.setTaskStatus)
 
   useEffect(() => {
     const parsed = parseFiltersFromSearch(search)
+    const parsedSort = parseSortFromSearch(search)
     setFiltersFromQuery(parsed)
-  }, [search, setFiltersFromQuery])
+    setListSort(parsedSort)
+  }, [search, setFiltersFromQuery, setListSort])
 
   useEffect(() => {
-    const nextSearch = buildSearchFromFilters(filters)
+    const nextSearch = buildSearchFromState(filters, listSort)
     if (nextSearch !== search) {
       navigate({ search: nextSearch }, { replace: true })
     }
-  }, [filters, navigate, search])
+  }, [filters, listSort, navigate, search])
 
   const filteredTasks = useMemo(
     () => getFilteredTasks(tasks, filters),
     [tasks, filters],
+  )
+  const sortedTasks = useMemo(
+    () => getSortedTasks(filteredTasks, listSort),
+    [filteredTasks, listSort],
   )
 
   const hasActiveFilters = isAnyFilterActive(filters)
@@ -101,6 +117,10 @@ export function IndexPage() {
     value: string,
   ) => {
     setFilters({ [key]: value || undefined })
+  }
+
+  const handleSortBy = (sortBy: ListSortKey) => {
+    setSortBy(sortBy)
   }
 
   return (
@@ -185,10 +205,10 @@ export function IndexPage() {
 
       <section className="mt-6">
         <p className="text-sm text-neutral-600">
-          Filtered tasks: {filteredTasks.length} / {tasks.length}
+          Filtered tasks: {sortedTasks.length} / {tasks.length}
         </p>
 
-        {filteredTasks.length === 0 ? (
+        {sortedTasks.length === 0 ? (
           <div className="mt-4 rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-8 text-center">
             <h2 className="text-lg font-semibold text-neutral-800">
               No tasks match these filters
@@ -205,19 +225,14 @@ export function IndexPage() {
             </button>
           </div>
         ) : (
-          <ul className="mt-4 space-y-2">
-            {filteredTasks.slice(0, 12).map((task) => (
-              <li
-                key={task.id}
-                className="rounded-lg border border-neutral-200 bg-white p-3"
-              >
-                <p className="font-medium text-neutral-800">{task.title}</p>
-                <p className="mt-1 text-xs text-neutral-600">
-                  {task.status} • {task.priority} • due {task.dueDate}
-                </p>
-              </li>
-            ))}
-          </ul>
+          <div className="mt-4">
+            <VirtualTaskTable
+              tasks={sortedTasks}
+              sort={listSort}
+              onSortBy={handleSortBy}
+              onStatusChange={setTaskStatus}
+            />
+          </div>
         )}
       </section>
     </main>
