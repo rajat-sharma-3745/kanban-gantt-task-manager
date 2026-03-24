@@ -20,7 +20,7 @@ const MOCK_USERS: PresenceUser[] = [
 
 const MOVE_INTERVAL_MS = 4000
 const STICK_PROBABILITY = 0.8
-const VIEWER_COUNT_INTERVAL_MS = 6000
+const VIEWER_COUNT_INTERVAL_MS = 5000
 
 function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min
