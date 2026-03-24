@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { KanbanBoard } from '../components/kanban/KanbanBoard'
+import { PresenceBar } from '../components/collab/PresenceBar'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { VirtualTaskTable } from '../components/list/VirtualTaskTable'
+import { TimelineView } from '../components/timeline/TimelineView'
 import { ASSIGNEES } from '../data/assignees'
+import { useMockPresence } from '../hooks/useMockPresence'
 import { getFilteredTasks, getSortedTasks, useTaskStore } from '../store/taskStore'
 import {
   TASK_PRIORITIES,
@@ -66,7 +69,8 @@ function MultiSelectChips<T extends string>({
 }
 
 export function IndexPage() {
-  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list')
+  const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'timeline'>('list')
+  const isApplyingSearchRef = useRef(false)
   const navigate = useNavigate()
   const { search } = useLocation()
 
@@ -81,6 +85,7 @@ export function IndexPage() {
   const setTaskStatus = useTaskStore((s) => s.setTaskStatus)
 
   useEffect(() => {
+    isApplyingSearchRef.current = true
     const parsed = parseFiltersFromSearch(search)
     const parsedSort = parseSortFromSearch(search)
     setFiltersFromQuery(parsed)
@@ -88,6 +93,10 @@ export function IndexPage() {
   }, [search, setFiltersFromQuery, setListSort])
 
   useEffect(() => {
+    if (isApplyingSearchRef.current) {
+      isApplyingSearchRef.current = false
+      return
+    }
     const nextSearch = buildSearchFromState(filters, listSort)
     if (nextSearch !== search) {
       navigate({ search: nextSearch }, { replace: true })
@@ -102,6 +111,11 @@ export function IndexPage() {
     () => getSortedTasks(filteredTasks, listSort),
     [filteredTasks, listSort],
   )
+  const presenceTaskIds = useMemo(
+    () => filteredTasks.map((task) => task.id),
+    [filteredTasks],
+  )
+  const { activeUsers, taskPresenceMap } = useMockPresence(presenceTaskIds)
 
   const hasActiveFilters = isAnyFilterActive(filters)
 
@@ -149,6 +163,17 @@ export function IndexPage() {
           }`}
         >
           Kanban View
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewMode('timeline')}
+          className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
+            viewMode === 'timeline'
+              ? 'border-neutral-900 bg-neutral-900 text-white'
+              : 'border-neutral-300 bg-white text-neutral-700'
+          }`}
+        >
+          Timeline View
         </button>
       </section>
 
@@ -254,6 +279,11 @@ export function IndexPage() {
         ) : viewMode === 'kanban' ? (
           <div className="mt-4">
             <KanbanBoard tasks={filteredTasks} onStatusChange={setTaskStatus} />
+          </div>
+        ) : viewMode === 'timeline' ? (
+          <div className="mt-4">
+            <PresenceBar users={activeUsers} />
+            <TimelineView tasks={filteredTasks} presenceByTask={taskPresenceMap} />
           </div>
         ) : (
           <div className="mt-4">

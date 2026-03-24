@@ -133,11 +133,6 @@ function optionalStartDate(
   return startStr
 }
 
-/**
- * Generates synthetic tasks for development and performance testing.
- * @param count - Number of tasks (default 520, must be >= 500 for assignment checks).
- * @param seed - Optional seed for reproducible output.
- */
 export function generateTasks(count = 520, seed = 42): Task[] {
   if (count < 1) {
     return []

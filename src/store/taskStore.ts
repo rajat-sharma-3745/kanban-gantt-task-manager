@@ -80,6 +80,24 @@ export function getSortedTasks(tasks: Task[], sort: TaskListSort): Task[] {
   return copy
 }
 
+function areSameStringArrays(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((value, index) => value === b[index])
+}
+
+function areSameFilters(a: TaskFilters, b: TaskFilters): boolean {
+  return (
+    areSameStringArrays(a.statuses, b.statuses) &&
+    areSameStringArrays(a.priorities, b.priorities) &&
+    areSameStringArrays(a.assigneeIds, b.assigneeIds) &&
+    a.dueFrom === b.dueFrom &&
+    a.dueTo === b.dueTo
+  )
+}
+
+function areSameListSort(a: TaskListSort, b: TaskListSort): boolean {
+  return a.sortBy === b.sortBy && a.sortDir === b.sortDir
+}
+
 export const useTaskStore = create<TaskState>((set) => ({
   tasks: generateTasks(),
   filters: createDefaultTaskFilters(),
@@ -99,8 +117,12 @@ export const useTaskStore = create<TaskState>((set) => ({
         ...patch,
       },
     })),
-  setFiltersFromQuery: (filters) => set(() => ({ filters })),
-  setListSort: (sort) => set(() => ({ listSort: sort })),
+  setFiltersFromQuery: (filters) =>
+    set((state) =>
+      areSameFilters(state.filters, filters) ? state : { filters },
+    ),
+  setListSort: (sort) =>
+    set((state) => (areSameListSort(state.listSort, sort) ? state : { listSort: sort })),
   setSortBy: (sortBy) =>
     set((state) => ({
       listSort: {
